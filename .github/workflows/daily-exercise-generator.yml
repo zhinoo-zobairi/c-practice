@@ -120,3 +120,38 @@ jobs:
           print(f"Wrote {out_c}")
           PY
 
+      - name: Verify generated file
+        run: |
+          ls -lah exercises
+          echo "Latest file:" && ls exercises/exercise-*.c | tail -n1
+          sed -n '1,20p' $(ls exercises/exercise-*.c | tail -n1)
+
+      - name: Commit new C exercise
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(exercise): add pointer exercise (index-based C)"
+          file_pattern: exercises/exercise-*.c
+
+      - name: Open Issue for today
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const branch = context.ref.replace('refs/heads/','');
+
+            const dir = 'exercises';
+            const files = fs.existsSync(dir)
+              ? fs.readdirSync(dir).filter(n => /^exercise-\d{2}\.c$/.test(n)).sort()
+              : [];
+            if (files.length === 0) { core.setFailed("No C exercise found to link."); return; }
+
+            const latest = files[files.length - 1];
+            const url = `https://github.com/${owner}/${repo}/blob/${branch}/${dir}/${latest}`;
+
+            await github.rest.issues.create({
+              owner, repo,
+              title: `Pointer Exercise ${latest.slice(9,11)}`,
+              // labels: ['exercise','pointers'], // uncomment only if these labels exist
+              body: `Your focused pointer drill is ready:\n\n- ${url}\n\n**Reminder**\n- Implement your few lines directly inside this C file's main().`
+            });

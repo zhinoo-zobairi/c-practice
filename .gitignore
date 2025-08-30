@@ -1,3 +1,7 @@
 *.o
 
 *.out
+
+# keep exercises in repo
+!exercises/
+!exercises/*.c
