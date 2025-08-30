@@ -1,50 +1,52 @@
+# .github/workflows/daily-exercise-generator.yml
 name: Daily Exercise Generator
 
 on:
   schedule:
-    - cron: "0 7 * * 1-5"
-  workflow_dispatch: # Allow manual triggering from the Actions tab
+    - cron: "0 7 * * 1-5"          # Run on weekdays at 07:00 UTC (≈ 09:00 Berlin in summer)
+  workflow_dispatch:               # Allow manual trigger from the Actions tab
 
-
-permissions: # Every job inherits this unless it overrides. 
-  contents: write
-  issues: write
-
+permissions:                       # Defaults for all jobs (overridable per job)
+  contents: write                  # Needed to commit the generated file
+  issues: write                    # Needed to open a GitHub Issue
 
 jobs:
   generate-and-issue:
-    runs-on: ubuntu-latest # Spins up a clean Linux VM. Nothing from this repo exists on it yet.
+    runs-on: ubuntu-latest         # Fresh Linux VM runner
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4  # Clones my repository into this fresh runner(Ubuntu VM), so steps can see my code.
+      - name: Checkout             # Clone repo into runner workspace
+        uses: actions/checkout@v4
         with:
-          persist-credentials: true # Checkout leaves the GitHub token in the .git/config. Later steps like git push will work automatically, because git knows the token.
+          persist-credentials: true  # Keep GITHUB_TOKEN in .git config for later push
 
-      - name: Set up Python # Installs a predictable Python for the next step
+      - name: Set up Python        # Provide a predictable Python runtime
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-        
-      - name: Install dependencies
+
+      - name: Install dependencies # OpenAI SDK used by the inline Python
         run: pip install --upgrade openai
 
       - name: Generate index-based pointer exercise as C file (no spoilers)
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # Add this in repo Settings → Secrets
         run: |
           python - << 'PY'
-          import os, re, hashlib, textwrap
+          import re, hashlib, textwrap
+          from pathlib import Path
           from openai import OpenAI
 
+          # --- repo layout ---
           root = Path(".")
           ex_dir = root / "exercises"
           ex_dir.mkdir(exist_ok=True)
 
-          # Determine next index 00..11
+          # --- next index 00..11 (stop after 12 exercises) ---
           existing = []
           for p in ex_dir.glob("exercise-*.c"):
             m = re.match(r"exercise-(\d{2})\.c$", p.name)
-            if m: existing.append(int(m.group(1)))
+            if m:
+              existing.append(int(m.group(1)))
           idx = 0 if not existing else max(existing) + 1
           if idx >= 12:
             print("All 12 exercises already generated. Exiting.")
@@ -52,19 +54,19 @@ jobs:
 
           out_c = ex_dir / f"exercise-{idx:02d}.c"
 
-          # Build compact history (titles + small signature) to avoid repetition
+          # --- compact history to discourage repetition ---
           history = []
           for p in sorted(ex_dir.glob("exercise-*.c")):
-            with open(p, "r", encoding="utf-8", errors="ignore") as f:
-              head = "".join(f.readlines()[:30])  # first ~30 lines of comments
-            sig = hashlib.sha1(head.encode("utf-8")).hexdigest()[:10]
-            first_title = ""
-            for line in head.splitlines():
-              if line.strip().startswith("Title:"):
-                first_title = line.strip()
-                break
-            history.append(f"{p.name}: {first_title or '(no-title)'} (sig:{sig})")
+            try:
+              head = (p.read_text(encoding="utf-8", errors="ignore")).splitlines()[:30]
+              head_text = "\n".join(head)
+              sig = hashlib.sha1(head_text.encode("utf-8")).hexdigest()[:10]
+              title = next((ln.strip() for ln in head if ln.strip().startswith("Title:")), "(no-title)")
+              history.append(f"{p.name}: {title} (sig:{sig})")
+            except Exception:
+              pass
 
+          # --- prompt: narrow pointer drills only, no algorithms, no starter code ---
           system = """You are a rigorous C tutor generating ONE focused daily exercise.
           RULES:
           - Scope: C pointers only (pointer-to-pointer T**, array-to-pointer decay, const-correctness on pointers,
@@ -81,16 +83,18 @@ jobs:
           Do NOT repeat previous exercises' semantics. Previous files:
           {(chr(10)).join(history) if history else "(none)"}"""
 
-          client = OpenAI()
+          client = OpenAI()  # uses OPENAI_API_KEY from environment
           resp = client.chat.completions.create(
               model="gpt-4o-mini",
               temperature=0.6,
-              messages=[{"role":"system","content":system},
-                        {"role":"user","content":user}],
+              messages=[
+                  {"role": "system", "content": system},
+                  {"role": "user",   "content": user},
+              ],
           )
           prompt = resp.choices[0].message.content.strip()
 
-          # Write a clean C file with only a comment header and empty main
+          # --- write a clean C file: only a comment header + empty main ---
           content = f"""/* 
   Title: (exercise {idx:02d})
   {prompt}
@@ -109,30 +113,30 @@ int main(void) {
     return 0;
 }
 """
-          with open(out_c, "w", encoding="utf-8") as f:
-            f.write(textwrap.dedent(content))
+          out_c.write_text(textwrap.dedent(content), encoding="utf-8")
           print(f"Wrote {out_c}")
-          PY
+PY
+        # IMPORTANT: the heredoc terminator 'PY' must remain flush-left exactly as shown.
+        # If you indent the final PY, the shell won't close the here-document and YAML will break.
 
-      - name: Commit new C exercise
+      - name: Commit new C exercise      # Stage and push only the generated .c file(s)
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(exercise): add pointer exercise (index-based C)"
           file_pattern: exercises/exercise-*.c
 
-      - name: Open Issue
+      - name: Open Issue                 # Create an Issue linking to the latest C file
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
             const { owner, repo } = context.repo;
             const branch = context.ref.replace('refs/heads/','');
 
             const dir = 'exercises';
             const files = fs.readdirSync(dir)
               .filter(n => /^exercise-\d{2}\.c$/.test(n))
-              .sort();
+              .sort(); // zero-padded index means lexicographic sort works
             if (files.length === 0) { core.setFailed("No C exercise found."); return; }
             const latest = files[files.length - 1];
             const url = `https://github.com/${owner}/${repo}/blob/${branch}/${dir}/${latest}`;
@@ -140,6 +144,6 @@ int main(void) {
             await github.rest.issues.create({
               owner, repo,
               title: `Pointer Exercise ${latest.slice(9,11)}`,
-              labels: ['exercise','pointers'],
-              body: `Your focused pointer drill is ready:\n\n- ${url}\n\n**Reminder**\n- No starter code was generated.\n- Implement the few required lines directly inside the C file's main().`
+              // labels: ['exercise','pointers'], // uncomment if these labels exist in your repo
+              body: `Your focused pointer drill is ready:\n\n- ${url}\n\n**Reminder**\n- No starter code was generated.\n- Implement the few required lines directly inside this C file's main().`
             });
