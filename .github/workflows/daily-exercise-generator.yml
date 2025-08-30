@@ -29,44 +29,40 @@ jobs:
 
       - name: Generate index-based pointer exercise as C file (no spoilers)
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # Add this in repo Settings → Secrets
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python - << 'PY'
           import re, hashlib, textwrap
           from pathlib import Path
           from openai import OpenAI
 
-          # --- repo layout ---
           root = Path(".")
           ex_dir = root / "exercises"
           ex_dir.mkdir(exist_ok=True)
 
-          # --- next index 00..11 (stop after 12 exercises) ---
           existing = []
           for p in ex_dir.glob("exercise-*.c"):
-            m = re.match(r"exercise-(\d{2})\.c$", p.name)
-            if m:
-              existing.append(int(m.group(1)))
+              m = re.match(r"exercise-(\d{2})\.c$", p.name)
+              if m:
+                  existing.append(int(m.group(1)))
           idx = 0 if not existing else max(existing) + 1
           if idx >= 12:
-            print("All 12 exercises already generated. Exiting.")
-            raise SystemExit(0)
+              print("All 12 exercises already generated. Exiting.")
+              raise SystemExit(0)
 
           out_c = ex_dir / f"exercise-{idx:02d}.c"
 
-          # --- compact history to discourage repetition ---
           history = []
           for p in sorted(ex_dir.glob("exercise-*.c")):
-            try:
-              head = (p.read_text(encoding="utf-8", errors="ignore")).splitlines()[:30]
-              head_text = "\n".join(head)
-              sig = hashlib.sha1(head_text.encode("utf-8")).hexdigest()[:10]
-              title = next((ln.strip() for ln in head if ln.strip().startswith("Title:")), "(no-title)")
-              history.append(f"{p.name}: {title} (sig:{sig})")
-            except Exception:
-              pass
+              try:
+                  head = (p.read_text(encoding="utf-8", errors="ignore")).splitlines()[:30]
+                  head_text = "\n".join(head)
+                  sig = hashlib.sha1(head_text.encode("utf-8")).hexdigest()[:10]
+                  title = next((ln.strip() for ln in head if ln.strip().startswith("Title:")), "(no-title)")
+                  history.append(f"{p.name}: {title} (sig:{sig})")
+              except Exception:
+                  pass
 
-          # --- prompt: narrow pointer drills only, no algorithms, no starter code ---
           system = """You are a rigorous C tutor generating ONE focused daily exercise.
           RULES:
           - Scope: C pointers only (pointer-to-pointer T**, array-to-pointer decay, const-correctness on pointers,
@@ -83,67 +79,36 @@ jobs:
           Do NOT repeat previous exercises' semantics. Previous files:
           {(chr(10)).join(history) if history else "(none)"}"""
 
-          client = OpenAI()  # uses OPENAI_API_KEY from environment
+          client = OpenAI()
           resp = client.chat.completions.create(
               model="gpt-4o-mini",
               temperature=0.6,
               messages=[
-                  {"role": "system", "content": system},
-                  {"role": "user",   "content": user},
+                  {"role":"system","content":system},
+                  {"role":"user","content":user},
               ],
           )
           prompt = resp.choices[0].message.content.strip()
 
-          # --- write a clean C file: only a comment header + empty main ---
+          # Keep these lines INDENTED so YAML treats them as part of the heredoc.
           content = f"""/* 
-  Title: (exercise {idx:02d})
-  {prompt}
+            Title: (exercise {idx:02d})
+            {prompt}
 
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
-*/
+            INSTRUCTIONS:
+            - Implement your solution in this file below.
+            - Do NOT add TODO markers; write your own minimal code.
+            - Keep it focused on the pointer concept; no algorithms.
+          */
 
-#include <stdio.h>
-#include <stdlib.h>
+          #include <stdio.h>
+          #include <stdlib.h>
 
-int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
-    return 0;
-}
-"""
+          int main(void) {
+              // Write your few lines here. Keep it minimal and pointer-focused.
+              return 0;
+          }
+          """
           out_c.write_text(textwrap.dedent(content), encoding="utf-8")
           print(f"Wrote {out_c}")
 PY
-        # IMPORTANT: the heredoc terminator 'PY' must remain flush-left exactly as shown.
-        # If you indent the final PY, the shell won't close the here-document and YAML will break.
-
-      - name: Commit new C exercise      # Stage and push only the generated .c file(s)
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(exercise): add pointer exercise (index-based C)"
-          file_pattern: exercises/exercise-*.c
-
-      - name: Open Issue                 # Create an Issue linking to the latest C file
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const { owner, repo } = context.repo;
-            const branch = context.ref.replace('refs/heads/','');
-
-            const dir = 'exercises';
-            const files = fs.readdirSync(dir)
-              .filter(n => /^exercise-\d{2}\.c$/.test(n))
-              .sort(); // zero-padded index means lexicographic sort works
-            if (files.length === 0) { core.setFailed("No C exercise found."); return; }
-            const latest = files[files.length - 1];
-            const url = `https://github.com/${owner}/${repo}/blob/${branch}/${dir}/${latest}`;
-
-            await github.rest.issues.create({
-              owner, repo,
-              title: `Pointer Exercise ${latest.slice(9,11)}`,
-              // labels: ['exercise','pointers'], // uncomment if these labels exist in your repo
-              body: `Your focused pointer drill is ready:\n\n- ${url}\n\n**Reminder**\n- No starter code was generated.\n- Implement the few required lines directly inside this C file's main().`
-            });
