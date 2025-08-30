@@ -90,10 +90,9 @@ jobs:
           )
           prompt = resp.choices[0].message.content.strip()
 
-          # Keep these lines INDENTED so YAML treats them as part of the heredoc.
-          content = f"""/* 
-            Title: (exercise {idx:02d})
-            {prompt}
+          tpl = Template("""/* 
+            Title: (exercise ${idx})
+            ${prompt}
 
             INSTRUCTIONS:
             - Implement your solution in this file below.
@@ -108,9 +107,15 @@ jobs:
               // Write your few lines here. Keep it minimal and pointer-focused.
               return 0;
           }
-          """
+          """)
+
+          # Supply safe values; format idx and pass prompt verbatim (no f-string)
+          content = tpl.safe_substitute(
+              idx=f"{idx:02d}",
+              prompt=prompt.replace("\r", "")  # normalize newlines (optional)
+          )
+
           out_c.write_text(textwrap.dedent(content), encoding="utf-8")
           print(f"Wrote {out_c}")
-
           PY
 
