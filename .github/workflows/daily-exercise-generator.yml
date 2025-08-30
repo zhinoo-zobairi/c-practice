@@ -35,6 +35,7 @@ jobs:
           import re, hashlib, textwrap
           from pathlib import Path
           from openai import OpenAI
+          from string import Template
 
           root = Path(".")
           ex_dir = root / "exercises"
