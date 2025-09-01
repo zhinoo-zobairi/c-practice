@@ -72,8 +72,10 @@ jobs:
           - Absolutely NO algorithms or data structures (no linked lists, stacks, queues, hash tables, sorting, etc.).
           - No solutions. No hints. No starter code. No TODOs.
           - Output must be plain text suitable for embedding inside a C block comment.
-          - Provide: Title, Learning Objective (≤2 lines), Constraints, Problem Statement,
-            and 3–5 Scenario Checks (expected behavior described in prose, NOT code)."""
+          - Provide: Title, Learning Objective (≤2 lines), Problem Statement,
+            and 3–5 Scenario Checks (expected behavior described in prose, NOT code).
+          - Do NOT prescribe specific solutions or types (no "use int**", "malloc here", "pointer arithmetic only").
+          - Only describe the *outcome* and expected behavior, never how to achieve it."""
 
           user = f"""Create exercise #{idx:02d} (3–15 lines of code expected to solve).
           Prioritize reasoning: when to pass T* vs T**, const placement, aliasing/ownership, correct lifetime decisions.
