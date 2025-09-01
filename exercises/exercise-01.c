@@ -1,37 +1,41 @@
-/* 
-  Title: (exercise 01)
-  ```c
 /*
-Title: Exercise 01 - Ownership and Lifetime of Dynamic Arrays
-Learning Objective: Understand the implications of passing pointers and pointer-to-pointer in function parameters, especially regarding ownership and memory management.
+Title: Exercise 01 – Dynamic Array and Ownership
 
-Constraints: 
-- Use dynamic memory allocation with malloc and free.
-- Do not use global variables.
-- Avoid using any form of array indexing; only pointer arithmetic is allowed.
+Learning Objective: Practice reasoning about memory allocation, ownership, and lifetime when sharing data between functions.
 
 Problem Statement:
-Write a function `initializeArray` that takes a pointer to a pointer of an integer (`int **arr`) and an integer `size`. Inside the function, allocate memory for an array of integers of the given size and initialize each element to its index value. The function should not return the array; instead, it should modify the pointer passed in, reflecting the new memory address. In the main function, call this `initializeArray` function, then print the elements of the array. Finally, free the allocated memory in the main function.
-
+Write a function `initializeArray` that prepares an integer sequence of a given size and makes it available to the caller.  
+The caller should then print the sequence and release any resources when finished.
+ 
 Scenario Checks:
-1. After calling `initializeArray`, the pointer in the main function should point to a valid memory address containing an array of integers.
-2. The elements of the array should be initialized to their respective indices (e.g., arr[0] = 0, arr[1] = 1, ...).
-3. If the `size` parameter is set to 0, the pointer should not point to any allocated memory.
-4. The memory allocated for the array should be properly freed in the main function to avoid memory leaks.
-5. Attempting to access the array in the main function without calling `initializeArray` should lead to undefined behavior.
-*/
-```
-
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
+1. After calling `initializeArray`, the caller can access a valid memory region containing the sequence.
+2. The elements of the sequence should correspond to their indices (e.g., 0, 1, 2, ...).
+3. If `size` is zero, no allocation should occur.
+4. The caller must explicitly release resources to avoid memory leaks.
+5. Attempting to access the sequence before initialization should not be valid.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void initializeArray(int** int_pointer, int size){
+  if (size == 0) return;
+  *int_pointer = malloc(sizeof(int) * size);
+  if (*int_pointer == NULL) {
+    printf("Memory allocation failed!\n");
+    exit(1);
+  }
+  for(int i = 0; i < size; i++){
+    (*int_pointer)[i] = i;
+  }
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int* arr;
+    initializeArray(&arr, 8);
+    for(int i = 0; i < 8; i++){
+    printf("%d", arr[i]);
+  }
+  free(arr);
     return 0;
 }
