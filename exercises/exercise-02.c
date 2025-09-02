@@ -1,32 +1,45 @@
-/* 
-  Title: (exercise 02)
-  ```c
+
 /*
-Title: Exercise 02 – Pointer Ownership and Lifetime Management
+Title: Exercise 02 – Pointer Redirection and Memory Lifecycle
 
-Learning Objective: Understand how to manage pointer ownership and lifetimes when passing pointers to functions.
+Learning Objective: Practice handling ownership transfer and memory cleanup when a pointer is updated indirectly through a function.
 
-Problem Statement: Write a function that takes a pointer to a pointer and modifies the original pointer to point to a new memory allocation. Ensure proper management of the original memory to avoid memory leaks.
+Problem Statement:
+You are given a function that updates a pointer from the caller to point to a new memory region. Your job is to ensure that memory is managed responsibly whenever the pointer is updated.
 
 Scenario Checks:
-1. After calling the function, the original pointer should point to a new allocated memory space, and the previous memory should be freed.
-2. If the function is called with a NULL pointer, it should not attempt to free any memory and should allocate a new block.
-3. If the function is called multiple times with the same original pointer, it should free the previously allocated memory before assigning the new allocation.
-4. The function should not modify the contents of the allocated memory, only the pointer itself.
-5. If a constant pointer is passed to the function, it should not allow modification of the original pointer's address, preventing any memory leaks or invalid access.
+1. After the function runs, the caller’s pointer should point to a fresh allocation.
+2. If the pointer was already pointing to something, that memory should no longer be leaked.
+3. Calling the function again should clean up the previous allocation properly before replacing it.
+4. The function must **only** rewire the pointer — not touch the contents of what it points to.
+5. Consider edge cases like uninitialized pointers or const-restricted usage.
 */
-```
 
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void change_memory(int** pptr, int size){
+  if (*pptr != NULL){
+    free(*pptr);
+  }
+  *pptr = malloc(sizeof(int) * size); // At this point, ptr is pointing to a valid memory block of 10 integers on the heap. But all 10 integers contain garbage (random memory), unless we explicitly assign something.
+  if (*pptr == NULL) return;
+  for (int i = 0; i < size; i++){   // both allocate and initialize, 
+    (*pptr)[i] = i;   // I don't need to write the **pptr because we know that [] is per se one level of dereferncing.
+  }
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int* ptr = NULL;
+    int** pptr = &ptr;
+    change_memory(pptr, 10);    // Or change_memory(&ptr, 10);
+
+    for (int i = 0; i < 10; i++)
+    {
+      printf("%d\n", ptr[i]);
+    }
+    
+    free(ptr);    // We free what we malloc'd
     return 0;
 }
