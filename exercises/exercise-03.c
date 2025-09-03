@@ -1,32 +1,44 @@
-/* 
-  Title: (exercise 03)
-  ```c
 /*
-Title: Exercise 03 – Understanding Pointer Ownership and Lifetime
-Learning Objective: Grasp the nuances of passing pointers and maintaining ownership through function parameters.
+Title: Exercise 03 – Navigating Arrays with Pointers
+
+Learning Objective:
+Strengthen your ability to navigate arrays using pointer arithmetic instead of array indexing.
 
 Problem Statement:
-Write a function that accepts a pointer to a pointer and modifies the original pointer to point to a new dynamically allocated memory. Ensure that the function handles ownership correctly, allowing the caller to manage the allocated memory. Additionally, create a main function that demonstrates the ownership transfer and memory management.
+Write a function `square_values` that accepts a pointer to the start of an integer array and a size. The function should square each value in the array **in-place** using **only pointer arithmetic** — no bracket notation allowed.
+
+Then, in `main`, allocate a dynamic array of integers, initialize it with some values, pass it to `square_values`, and print the squared values.
+
+Constraints:
+- You must not use the `[]` operator inside your function.
+- Use `malloc` and `free` appropriately.
+- Do not use global variables.
 
 Scenario Checks:
-1. After invoking the function, the original pointer in the caller should point to the newly allocated memory, not the old memory location.
-2. The caller must be responsible for freeing the memory allocated by the function to prevent memory leaks.
-3. If the function is called multiple times with the same pointer, the previously allocated memory should be freed before reassigning the pointer to the new memory.
-4. If the function is given a NULL pointer to begin with, it should allocate memory correctly without causing a segmentation fault.
-5. Ensure that the original pointer is not modified if the function fails to allocate memory (e.g., due to insufficient memory).
-*/
-```
-
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
+1. Input: [1, 2, 3, 4] → Output: [1, 4, 9, 16]
+2. Function must work on any array length ≥ 0
+3. The function must not access memory out of bounds
+4. Proper memory cleanup should be handled in main
+5. The logic must work correctly when the size is 0 (i.e., should do nothing)
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-
+void square_values(int* arr_ptr, int size){
+  if (size == 0) return;
+  for (int i = 0; i < size; i++) {
+      * (arr_ptr + i) = (* (arr_ptr + i)) * (* (arr_ptr + i));
+    }
+}
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int* arr_ptr = malloc(5 * sizeof(int));
+    for (int i = 0; i < 5; i++) {
+      arr_ptr[i] = i;
+    }
+    square_values(arr_ptr, 5);
+    for (int i = 0; i < 5; i++) {
+      printf("%d\n", arr_ptr[i]);
+    }
+    free(arr_ptr);
     return 0;
 }
