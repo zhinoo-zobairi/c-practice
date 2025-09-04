@@ -26,7 +26,25 @@ Scenario Checks:
 #include <stdio.h>
 #include <stdlib.h>
 
+void change_first_element(int* modifiable_array, const int* readonly_int){ // Aliasing: Two or more different pointers refer to the same memory location. Onne is const but the other is moddifiable. You can modify the same location via the modifiable though. So const only protects against direct writes through itself, not side effects through aliasing.
+  modifiable_array[0] = 10;
+}
+
 int main(void) {
     // Write your few lines here. Keep it minimal and pointer-focused.
+    int* ptr = calloc(5, sizeof(int));
+    change_first_element(ptr, ptr);
+    for(int i = 0; i < 5; i++){
+      printf("%d\n", ptr[i]);
+    }
+    free(ptr);
     return 0;
 }
+
+/*
+const int* readonly means: "I can’t write through this pointer."
+
+But if someone else has a non-const pointer to the same memory...boom! they can write.
+
+That’s pointer aliasing: const correctness only applies to the pointer itself, not the memory region if someone else holds a writeable alias.
+*/
