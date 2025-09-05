@@ -1,7 +1,4 @@
 /* 
-  Title: (exercise 05)
-  ```c
-/*
 Title: Exercise 05 – Understanding Pointer Ownership and Lifetime
 
 Learning Objective: Grasp the implications of pointer ownership and the effects of const correctness in function parameters.
@@ -14,8 +11,6 @@ Scenario Checks:
 3. If a const qualifier is applied to the pointer-to-pointer parameter, attempts to modify the value should result in a compilation error, enforcing const correctness.
 4. Ensure that passing a NULL pointer to the function does not lead to undefined behavior, and that the function handles it gracefully without modifying the original pointer.
 5. Confirm that the memory allocated for any new values is properly freed outside of the function to avoid memory leaks, reinforcing the importance of understanding ownership and lifetime.
-*/
-```
 
   INSTRUCTIONS:
   - Implement your solution in this file below.
@@ -26,7 +21,24 @@ Scenario Checks:
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+In C, const always applies to the thing it’s adjacent to — and:
+	•	If it’s next to a type (like int), that type is const.
+	•	If it’s next to a *, then the pointer itself is const.
+*/
+void change_using_pptr(int** const pptr, int new_value){
+  if (pptr == NULL || *pptr == NULL)
+  {
+    return;
+  }
+    **pptr = new_value;
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int value = 10;
+    int* ptr = &value;
+    int** pptr = &ptr;
+    change_using_pptr(pptr, 20);
+    printf("%d\n", value);
     return 0;
 }
