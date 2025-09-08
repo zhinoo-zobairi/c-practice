@@ -26,7 +26,33 @@ Scenario Checks:
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
+void change(int** pointer, const int** ptr) {
+    if (pointer == NULL) return;
+
+    if (*pointer != NULL) {
+        free(*pointer);
+    }
+
+    *pointer = malloc(sizeof(int));
+    if (*pointer == NULL) return;
+
+    **pointer = 42; 
+
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int* target = malloc(sizeof(int));
+    if (target == NULL) return 1;
+
+    *target = 10;
+
+    int* alias = target;
+
+    change(&target, (const int**)&alias); 
+
+    free(target);
     return 0;
 }
