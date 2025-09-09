@@ -25,8 +25,18 @@ Scenario Checks:
 
 #include <stdio.h>
 #include <stdlib.h>
+// Function that modifies array (non-const version)
+void double_array(int* arr_start, int size){
+  if (arr_start == NULL || size == 0) return;
+  for (int i = 0; i < size; i++){
+    arr_start[i] = arr_start[i] * 2;
+  }
+  // I won't free the memory because I would transfer ownsership that way!
+}
 
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int arr[] = {1, 2, 3}
+    double_arr(arr, 3);
+    // double_array(arr, 3);  // COMPILER ERROR! Cannot convert 'const int*' to 'int*'
     return 0;
 }
