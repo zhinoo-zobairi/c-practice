@@ -1,6 +1,3 @@
-/* 
-  Title: (exercise 08)
-  ```c
 /*
 Title: Exercise 08 – Pointer Aliasing and Const-Correctness
 
@@ -15,18 +12,25 @@ Scenario Checks:
 4. If the original pointer is null before the function call, it should be updated to point to the data of the const pointer without any memory leaks.
 5. After the function call, dereferencing the original pointer should yield the same value as dereferencing the const pointer, confirming that the assignment was successful.
 */
-```
-
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void modify(const int** pptr, const int* const ptr) { // const always modifies whatever is immediately to its left(either the int or the asterisc) If there's nothing to the left, it modifies what's to its right.
+  if (pptr == NULL) return;
+  *pptr = ptr; // Safe, const-to-const
+}
 int main(void) {
     // Write your few lines here. Keep it minimal and pointer-focused.
+    const int value = 10;
+    const int* const address = &value;
+    int* ptr = malloc(sizeof(int));
+    const int** pptr = malloc(sizeof(int*)); // So that when we assign address to pptr they have the same type
+    modify(pptr, address);
+    printf("%d\n", **pptr);
+
+    free(ptr);
+    free(pptr);
+    return 0;
     return 0;
 }
