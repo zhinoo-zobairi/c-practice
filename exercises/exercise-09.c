@@ -25,8 +25,23 @@ Scenario Checks:
 
 #include <stdio.h>
 #include <stdlib.h>
-
+void double_values(int** pptr, int size){
+    if (pptr == NULL || *pptr == NULL) return;
+    for (int i=0; i < size; i++){
+        (*pptr)[i] *= 2;
+    }
+}
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int size = 5;
+    int* ptr = malloc(sizeof(int)*5);
+    int** pptr= &ptr;
+    for (int i=0; i < size; i++){
+        ptr[i] = i;
+    }
+    double_values(pptr, size);
+    for (int i=0; i < size; i++){
+        printf("%d\n", ptr[i]);
+    }
+    free(ptr);
     return 0;
 }
