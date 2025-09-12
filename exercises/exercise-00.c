@@ -1,6 +1,3 @@
-/* 
-  Title: (exercise 00)
-  ```c
 /*
 Title: Pointer Ownership and Lifetime Management
 
@@ -17,18 +14,22 @@ Scenario Checks:
 4. If a const pointer is passed to the function, it should not allow modifications to the data in the allocated array.
 5. Ensure that if the function handles memory allocation failure, it returns an appropriate status to the caller.
 */
-```
-
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void allocate_array(int** pptr, int size) {
+  if (pptr == NULL) return;  
+  *pptr = malloc(sizeof(int) * size);
+  if (*pptr == NULL) {
+    fprintf(stderr, "Allocation failed\n");
+    return;
+}
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int* pptr = NULL;
+    allocate_array(&pptr, 5);
+    free(pptr);
     return 0;
 }
