@@ -1,6 +1,3 @@
-/* 
-  Title: (exercise 11)
-  ```c
 /*
 Title: Exercise 11 – Understanding Pointer-to-Pointer and Ownership
 
@@ -15,18 +12,31 @@ Scenario Checks:
 4. Attempting to access the modified memory in the caller after freeing it should lead to undefined behavior, emphasizing the importance of understanding lifetime and ownership.
 5. If the function is designed to modify the pointer itself (not just the data it points to), ensure that the caller's pointer reflects this change when using a pointer-to-pointer but remains unchanged when using a single pointer.
 */
-```
 
-  INSTRUCTIONS:
-  - Implement your solution in this file below.
-  - Do NOT add TODO markers; write your own minimal code.
-  - Keep it focused on the pointer concept; no algorithms.
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void observe_modifications(int** pptr, int* ptr){
+    printf("pptr is %p\n",pptr);
+    printf("pptr is pointing at %p\n",*pptr);
+    printf("ptr is %p\n",ptr);
+    printf("ptr is pointing at %d\n",*ptr);
+    *pptr = calloc(1, sizeof(int));
+    *ptr = 50;
+    printf("pptr is %p\n",pptr);
+    printf("pptr is pointing at %p\n",*pptr);
+    printf("ptr was passed by value, hence remains the same %p\n",ptr);
+    printf("ptr is pointing at %d\n",*ptr);
+}
+
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
+    int x = 10;
+    int* ptr = &x;
+    int** pptr = &ptr;
+    observe_modifications(pptr, ptr);
+    free(ptr);
+    printf("%d\n", *ptr);
     return 0;
 }
