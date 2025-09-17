@@ -28,11 +28,12 @@ jobs:
         run: pip install --upgrade openai
 
       - name: Generate index-based pointer exercise as C file (no spoilers)
+        id: generate_exercise
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python - << 'PY'
-          import re, hashlib, textwrap
+          import re, hashlib, textwrap, os
           from pathlib import Path
           from openai import OpenAI
           from string import Template
@@ -49,6 +50,8 @@ jobs:
           idx = 0 if not existing else max(existing) + 1
           if idx >= 12:
               print("All 12 exercises already generated. Exiting.")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("exercise_generated=false\n")
               raise SystemExit(0)
 
           out_c = ex_dir / f"exercise-{idx:02d}.c"
@@ -120,21 +123,26 @@ jobs:
 
           out_c.write_text(textwrap.dedent(content), encoding="utf-8")
           print(f"Wrote {out_c}")
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write("exercise_generated=true\n")
           PY
 
       - name: Verify generated file
+        if: steps.generate_exercise.outputs.exercise_generated == 'true'
         run: |
           ls -lah exercises
           echo "Latest file:" && ls exercises/exercise-*.c | tail -n1
           sed -n '1,20p' $(ls exercises/exercise-*.c | tail -n1)
 
       - name: Commit new C exercise
+        if: steps.generate_exercise.outputs.exercise_generated == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(exercise): add pointer exercise (index-based C)"
           file_pattern: exercises/exercise-*.c
 
       - name: Open Issue for today
+        if: steps.generate_exercise.outputs.exercise_generated == 'true'
         uses: actions/github-script@v7
         with:
           script: |
