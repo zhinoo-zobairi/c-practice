@@ -26,7 +26,24 @@ Scenario Checks:
 #include <stdio.h>
 #include <stdlib.h>
 
+void new_array(int** pptr, int size){
+  int* temp_ptr;
+  temp_ptr = malloc(sizeof(int) * size);
+  for (int i = 0; i < size; i++) {
+    temp_ptr[i] = (*pptr)[i]  * 2;
+  }
+  free(*ptr); // Free memory that ptr points to (the heap block), since free() always works on the address stored inside the pointer, not the pointer variable itself.
+  *pptr = temp_ptr;
+}
+
 int main(void) {
-    // Write your few lines here. Keep it minimal and pointer-focused.
-    return 0;
+    int* ptr = malloc(sizeof(int) * size);
+    int** pptr = &ptr;
+    
+    for (int i = 0; i < size; i++) {
+        ptr[i] = i;
+    }
+    
+    new_array(pptr, size);
+
 }
