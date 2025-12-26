@@ -31,6 +31,11 @@ Instead, it follows the model:
 
 > “Here is a name. Describe what this name refers to.”
 
-For this reason, array brackets are part of the declarator and must attach to the identifier rather than the base type.  
+For this reason, array brackets are part of the declarator and must attach to the identifier rather than the base type.
+
 - `int name[]` declares `name` as an array of `int`
 - `int *name[]` declares `name` as an array of pointers to `int`
+- `int (*name)[]` (for contrast) declares `name` as a pointer to an array of `int`
+
+Note: `int* name[]` and `int *name[]` are identical to the compiler. Whitespace has no semantic meaning in C.  
+However, the `int *name[]` style is preferred because the `*` visually binds to the identifier, which avoids misinterpretation in declarations such as `int *a, b;`, where only `a` is a pointer and `b` is a plain `int`.
