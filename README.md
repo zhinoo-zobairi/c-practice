@@ -17,7 +17,7 @@ A GitHub Actions workflow runs on weekdays to:
 2. Commit it to the repository
 3. Open a GitHub Issue linking to the new drill for progress tracking
 
-## Notes on C Declaration Semantics
+## Notes on C Semantics
 
 C has several historical design characteristics that influence how code is written and read.
 
